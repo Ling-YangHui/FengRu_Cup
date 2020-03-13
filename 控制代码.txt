@@ -6,7 +6,7 @@ plug_in start:
             go to: connect to the default TCP server
         else:   
             go to: connect to the default Wi-Fi
-    connect to the default TCP server:
+    connect to the default TCP server: //遍历网关
         if (true):  
             go to: check net_work:
         else:  
