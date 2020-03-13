@@ -1,0 +1,58 @@
+const Serial_num,
+
+plug_in start:
+    connect to the default Wi-Fi:
+        if (true):  
+            go to: connect to the default TCP server
+        else:   
+            go to: connect to the default Wi-Fi
+    connect to the default TCP server:
+        if (true):  
+            go to: check net_work:
+        else:  
+            go to: connect to the default TCP server
+    check net_work:
+        set pass_through
+        if (true):
+            go to: check the Serial_num
+        else:
+            go to: set default Wi-Fi
+    check the Serial_num:
+        if (true):
+            LED_Green on
+            flag = 1
+        else:
+            LED_Orange on
+            flag = 0
+        go to: work
+    work:
+        power on
+        if (flag == 1):
+            while(1):
+                measure the power; //use interrupt 1
+                if (power > limit_power):
+                    turn off
+                    Serial_print(Warning)
+                Serial_print(Serial_num + power)
+        else:
+            while(1):
+                measure the power; //use interrupt 1
+                if (power > limit_power):
+                    shut
+    set default Wi-Fi:
+        pass_through
+        Serial_read(SSID + PSD)
+        set default Wi-Fi
+        out pass_through
+        go to: connect the default Wi-Fi
+
+interruptions:
+    reset the default Wi-Fi (when INT0):    priority 1
+        reset the Wi-Fi & the TCP server
+        go to: connect to the default Wi-Fi
+    reset the limit power (when RX: rst_p + limit_power):   priority 0
+        reset the limit power
+    turn off (when RX: off):  priority 0
+        turn off
+    turn on (when RX: on):    priority 0
+        turn on
