@@ -56,3 +56,5 @@ interruptions:
         turn off
     turn on (when RX: on):    priority 0
         turn on
+    No connect (when INT1): priority 1
+        go to: work
