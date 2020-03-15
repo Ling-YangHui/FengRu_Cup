@@ -126,6 +126,7 @@ void main()
 	ES = 1;
     P1 = 0xff;
     P2 = 0x00;
+    uart_init();
     time_init();
     while(1)
     {
