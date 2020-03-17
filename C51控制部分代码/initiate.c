@@ -33,5 +33,5 @@ void uart_init()
 void get_init()
 {
 	top = 0;
-	memset(get_cache,0,48);
+	memset(get_cache,0,64);
 }
