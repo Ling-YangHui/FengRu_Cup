@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">EleApp</string>
+    <string name="menu_1">设备</string>
+    <string name="menu_2">统计</string>
+    <string name="menu_3">商城</string>
+    <string name="menu_4">用户</string>
+    <string name="plug1">插座1\n运行中</string>
+    <string name="plug2">插座2\n运行中</string>
+    <string name="plug3">插座3\n运行中</string>
+    <string name="user_name">用户名</string>
+    <string name="user_info">用户信息</string>
+    <string name="div_co">设备管理</string>
+    <string name="setting">设置</string>
+    <string name="my_div">我的设备</string>
+    <string name="add_div">添加更多设备</string>
+    <string name="shop">商城</string>
+    <string name="stat">统计信息</string>
+    <string name="net_test">连接测试</string>
+    <string name="send_mess">发送消息</string>
+    <string name="connect_info">连接状态信息</string>
+</resources>
