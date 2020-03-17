@@ -6,7 +6,7 @@
 
 	extern int8 num[10];
 	extern int8 sel[4];
-	extern int8 get_cache[48];
+	extern int8 get_cache[64];
 	extern int8 top;
 	void delay(int16);
 	void show(int16);
