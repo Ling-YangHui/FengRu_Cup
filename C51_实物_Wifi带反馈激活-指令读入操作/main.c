@@ -1,6 +1,5 @@
 #include <reg52.h>
 #include <string.h>
-#include "FengRuCup.h"
 #define int8 unsigned char
 #define int16 unsigned int
 
