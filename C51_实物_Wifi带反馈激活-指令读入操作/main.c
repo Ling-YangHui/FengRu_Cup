@@ -1,13 +1,15 @@
 #include <reg52.h>
 #include <string.h>
+#include <ctype.h>
 #define int8 unsigned char
 #define int16 unsigned int
 
+int8 top;
 int8 order_state;
 int8 wifi_done;
 int8 get_cache[48];
-int8 top;
 int8 second;
+int8 limit_second;
 
 void delay_ms(int16);
 void num_init();
@@ -87,12 +89,12 @@ void get_string() interrupt 4
 	if (get_cache[top - 1] == '\n')
 	{
 		test();
-		/*
+		
 		send_string(get_cache);
-		P1 = 0x00;
+		P0 = 0xff;
 		delay_ms(100);
-		P1 = 0xff;
-		*/
+		P0 = 0x00;
+		
 		get_init();
 		return;
 	}
@@ -116,12 +118,25 @@ void Act()
 
 void test()
 {
+	int8 num = 0,top_p;
 	if (strcmp(get_cache,"PW P SW\r\n") == 0)
 		order_state = 1;
 	else if (strcmp(get_cache,"OK\r\n") == 0)
 		order_state = 2;
 	else if (strcmp(get_cache,"WIFI GOT IP\r\n") == 0)
 		order_state = 3;
+	else if (strstr(get_cache,"PW M FRST ") != NULL)
+	{
+		top_p = 10;
+		while(isdigit(get_cache[top_p]))
+		{
+			num *= 10;
+			num += get_cache[top_p] - '0';
+			top_p ++;
+		}
+		if (top_p != 10)
+			limit_second = num;
+	}
 	return;
 }
 
@@ -188,21 +203,33 @@ void send_string(int8 c[])
 		send_char(*c ++);
 	send_char('\r');
 	send_char('\n');
-	P1 = 0x00;
+	P0 = 0xFF;
 	delay_ms(100);
-	P1 = 0xff;
+	P0 = 0x00;
 	return;
 }
 
 void main()
 {
+	limit_second = 60;
+	P0 = 0X00;
 	time_init();
 	uart_init();
 	num_init();
 	get_init();
 	open();
+	TR0 = 1;
 	while(1)
 	{
+		if (second >= limit_second)
+		{
+			TR0 = 0;
+			send_string("1230");
+			send_char(limit_second / 10 % 10 + '0');
+			send_char(limit_second % 10 + '0');
+			second = 0;
+			TR0 = 1;
+		}
 		if (order_state == 1)
 		{
 			Act();
