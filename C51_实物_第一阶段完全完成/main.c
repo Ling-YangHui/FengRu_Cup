@@ -1,11 +1,14 @@
 #include <reg52.h>
 #include <string.h>
 #include <ctype.h>
+#include <eeprom.h>
 #define int8 unsigned char
 #define int16 unsigned int
 
 int8 top;
 int8 order_state;
+int8 emergency;
+int8 useroff;
 int8 get_cache[48];
 int8 second;
 int8 limit_second;
@@ -38,7 +41,6 @@ void count_init()
 	TMOD |= 0x05;
 	TR0 = 0;
 }
-
 void time_init()
 {
     RCAP2H = (0xFFFF - 50000) / 256;
@@ -47,15 +49,15 @@ void time_init()
 	T2MOD = 0;
 	ET2 = 1;
 }
-
 void time()  interrupt 5
 {
 	second ++;
     TF2 = 0;
 }
-
 void num_init()
 {
+    useroff = 0;
+    emergency = 0;
 	dot_limit = 0;
 	dot_count = 0;
 	dot_mode = 0;
@@ -63,7 +65,6 @@ void num_init()
 	order_state = 0;
 	top = 0;
 }
-
 void uart_init()
 {
     SCON = 0x50;
@@ -75,13 +76,11 @@ void uart_init()
 	EA = 1;
 	ES = 1;
 }
-
 void get_init()
 {
 	top = 0;
 	memset(get_cache,0,48);
 }
-
 void get_char(int8 *c)
 {
 	if (SBUF == 0xFF)
@@ -94,7 +93,6 @@ void get_char(int8 *c)
 	RI = 0;
 	return;
 }
-
 void get_string() interrupt 4
 {
 	get_char(&get_cache[top ++]);
@@ -121,7 +119,6 @@ void get_string() interrupt 4
 		get_init();
 	return;
 }
-
 void delay_ms(int16 k)
 {
 	int16 i;
@@ -129,15 +126,14 @@ void delay_ms(int16 k)
 	for (i = k;i > 0;i --)
 		for (j = 112;j > 0;j --);
 }
-
 void Act()
 {
 	P1 = ~P1;
 }
-
 void test()
 {
-	int8 num = 0,top_p;
+	int16 num = 0;
+    int8 top_p;
 	if (strcmp(get_cache,"PW P SW\r\n") == 0)
 		order_state = 1;
 	else if (strcmp(get_cache,"OK\r\n") == 0)
@@ -158,6 +154,7 @@ void test()
 	}
 	else if (strstr(get_cache,"PW PL RST ") != NULL)
 	{
+        top_p = 10;
 		while(isdigit(get_cache[top_p]))
 		{
 			num *= 10;
@@ -169,7 +166,6 @@ void test()
 	}
 	return;
 }
-
 void open()
 {
 	while(order_state != 3)
@@ -217,10 +213,10 @@ void open()
 	order_state = 0;
 	//ATsend();
 	send_string("AT+CIPSEND");
+    top = 0;
 	delay_ms(3000);
-	send_string("Murasame");
+	send_string("Sakura");
 }
-
 void send_char(int8 c)
 {
 	ES = 0;
@@ -230,7 +226,6 @@ void send_char(int8 c)
 	ES = 1;
     return;
 }
-
 void send_string(int8 c[])
 {
 	while(*c != '\0')
@@ -242,7 +237,6 @@ void send_string(int8 c[])
 	P0 = 0x00;
 	return;
 }
-
 void main()
 {
 	int8 str[5] = {0,0,0,0,0};
@@ -255,35 +249,56 @@ void main()
 	num_init();
 	get_init();
 	open();
+    TR0 = 1;
 	TR2 = 1;
+    P1 = 0x00;
 	while(1)
 	{
 		if (second >= limit_second)
 		{
+            TR0 = 0;
 			TR2 = 0;
 			frequency_count = TH0 * 256 + TL0;
 			frequency_count = frequency_count * 2.43 * 2.43 * 2 / 48 * 128 / 3579 * 200;
 			frequency_count /= (limit_second / 20);
-			if (frequency_count > PL)
-			{
-				P1 = 0xFF;
-				send_string("PL exceeded");
-			}
-			else
-			{
-				for (i = 0;i < 4;i ++)
-				{
-					str[3 - i] = frequency_count % 10 + '0';
-					frequency_count /= 10;
-				}		
-				send_string(str);
-			}
+            TH0 = 0;
+            TL0 = 0;
+            if (useroff == 0)
+            {
+                if (frequency_count > PL)
+                {
+                    emergency = 1;
+                    useroff = 1;
+                    P1 = 0xFF;
+                    send_string("PL exceeded");
+                }
+                else
+                {
+                    emergency = 0;
+                    for (i = 0;i < 4;i ++)
+                    {
+                        str[3 - i] = frequency_count % 10 + '0';
+                        frequency_count /= 10;
+                    }		
+                    send_string(str);
+                }
+            }
+            else if (useroff == 1 && emergency == 0)
+            {
+                send_string("OFF");
+            }
+            else if (useroff == 1 && emergency == 1)
+            {
+                send_string("PL exceeded");
+            }
 			TR2 = 1;
+            TR0 = 1;
 			second = 0;
 		}
 		if (order_state == 1)
 		{
-			Act();
+            Act();
+			useroff = (useroff + 1) % 2;
 			order_state = 0;
 		}
 	}
